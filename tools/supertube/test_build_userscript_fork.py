@@ -154,6 +154,23 @@ class SuperTubeUserscriptBuilderTests(unittest.TestCase):
         self.assertIn("cdn.jsdelivr.net/gh/etumen/SuperTubeCobalt@", text)
         self.assertIn("/supertube/userscript/dist/", text)
 
+    def test_secure_toolchain_versions_are_exactly_pinned(self):
+        expected = {
+            "@babel/core": "7.29.7",
+            "@babel/plugin-transform-modules-systemjs": "7.29.8",
+            "browserslist": "4.29.0",
+            "picomatch": "4.0.7",
+            "rollup": "3.30.0",
+            "@rollup/plugin-terser": "1.0.0",
+            "serialize-javascript": "7.1.1",
+        }
+
+        self.assertTrue(
+            hasattr(builder, "SECURE_TOOLCHAIN_PINS"),
+            "builder must define SECURE_TOOLCHAIN_PINS",
+        )
+        self.assertEqual(builder.SECURE_TOOLCHAIN_PINS, expected)
+
 
 if __name__ == "__main__":
     unittest.main()

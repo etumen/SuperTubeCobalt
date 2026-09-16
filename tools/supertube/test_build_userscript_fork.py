@@ -7,6 +7,7 @@ import unittest
 from pathlib import Path
 
 MODULE_PATH = Path(__file__).with_name("build_userscript_fork.py")
+REPO_ROOT = MODULE_PATH.parents[2]
 spec = importlib.util.spec_from_file_location("build_userscript_fork", MODULE_PATH)
 builder = importlib.util.module_from_spec(spec)
 assert spec.loader is not None
@@ -143,6 +144,15 @@ class SuperTubeUserscriptBuilderTests(unittest.TestCase):
 
             with self.assertRaisesRegex(RuntimeError, "forbidden legacy strings"):
                 builder.validate_built_userscript(artifact)
+
+    def test_bootstrap_never_loads_upstream_npm_userscript_directly(self):
+        bootstrap = REPO_ROOT / "supertube/userscript/bootstrap.js"
+        text = bootstrap.read_text(encoding="utf-8")
+
+        self.assertNotIn("cdn.jsdelivr.net/npm/@foxreis/tizentube", text)
+        self.assertNotIn("@foxreis/tizentube@", text)
+        self.assertIn("cdn.jsdelivr.net/gh/etumen/SuperTubeCobalt@", text)
+        self.assertIn("/supertube/userscript/dist/", text)
 
 
 if __name__ == "__main__":

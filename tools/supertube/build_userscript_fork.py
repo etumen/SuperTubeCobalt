@@ -65,6 +65,22 @@ def run_npm(mods: Path, *args: str) -> None:
     subprocess.run([str(cmd), "/d", "/s", "/c", command], check=True)
 
 
+def install_secure_toolchain(mods: Path) -> None:
+    """Install the exact audited build-tool versions and fail on any known advisory."""
+    specs = tuple(
+        f"{name}@{version}" for name, version in SECURE_TOOLCHAIN_PINS.items()
+    )
+    run_npm(
+        mods,
+        "install",
+        "--save-dev",
+        "--save-exact",
+        "--ignore-scripts",
+        *specs,
+    )
+    run_npm(mods, "audit", "--audit-level=low")
+
+
 def replace_once(text: str, old: str, new: str, label: str) -> str:
     count = text.count(old)
     if count != 1:
@@ -279,7 +295,7 @@ def main() -> None:
         patch_runtime(mods)
         patch_brand_literals(mods)
 
-        run_npm(mods, "ci")
+        install_secure_toolchain(mods)
         run_npm(mods, "run", "build")
 
         built = source / "dist/userScript.js"

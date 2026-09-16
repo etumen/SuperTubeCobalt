@@ -2,6 +2,6 @@
   "channel": "staging",
   "upstreamRepository": "https://github.com/reisxd/TizenTube",
   "upstreamCommit": "893b663d35efa558d8bdf9f54f0c4f9a31ab6a07",
-  "sha256": "100468289e67821fc71ba6259baf4df912ab2c5deb0329644b5d680353a03ef7",
+  "sha256": "38bd2208cf4c087ed2a3104742be94bbc93523f68dd4646d7cbde222dbcbeef6",
   "license": "GPL-3.0-only"
 }

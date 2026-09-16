@@ -2,9 +2,9 @@
  * SuperTube userscript bootstrap.
  *
  * Purpose:
- * - Never load the unversioned/latest TizenTube userscript directly.
- * - Keep normal users on a pinned stable version.
- * - Let test devices opt in to a pinned staging version before promotion.
+ * - Never load TizenTube directly from npm/latest at runtime.
+ * - Keep normal users on a promoted stable SuperTube artifact.
+ * - Let test devices opt in to an immutable staging artifact before promotion.
  *
  * Upstream TizenTube userscript is GPL-3.0-only:
  * https://github.com/reisxd/TizenTube
@@ -15,12 +15,21 @@
   const CHANNEL_KEY = 'supertube.userscript.channel';
 
   // Promotion rule:
-  // 1) change staging only,
-  // 2) test on a SuperTube test TV,
-  // 3) after approval, set stable to the tested staging version.
-  const VERSIONS = Object.freeze({
-    stable: '1.15.0',
-    staging: '1.15.0',
+  // 1) publish a new immutable staging artifact,
+  // 2) test that exact artifact on a SuperTube test TV,
+  // 3) only after approval, promote the exact tested bytes to stable.
+  //
+  // Stable intentionally remains empty until the first TV-tested artifact is
+  // promoted. Failing closed is safer than silently falling back to upstream.
+  const ARTIFACTS = Object.freeze({
+    stable: null,
+    staging: Object.freeze({
+      upstreamVersion: '1.15.0',
+      upstreamCommit: '893b663d35efa558d8bdf9f54f0c4f9a31ab6a07',
+      artifactCommit: '039ba819284472812e7218169166e43feaed6131',
+      sha256: '100468289e67821fc71ba6259baf4df912ab2c5deb0329644b5d680353a03ef7',
+      url: 'https://cdn.jsdelivr.net/gh/etumen/SuperTubeCobalt@039ba819284472812e7218169166e43feaed6131/supertube/userscript/dist/staging/userScript.js',
+    }),
   });
 
   let requestedChannel = 'stable';
@@ -31,20 +40,25 @@
   }
 
   const channel = requestedChannel === 'staging' ? 'staging' : 'stable';
-  const version = VERSIONS[channel];
+  const artifact = ARTIFACTS[channel];
 
-  if (!/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(version)) {
-    console.error('[SuperTube] Refusing invalid userscript version:', version);
+  if (!artifact) {
+    console.error(`[SuperTube] No ${channel} userscript artifact has been promoted.`);
     return;
   }
 
   const script = document.createElement('script');
   script.async = true;
-  script.src = `https://cdn.jsdelivr.net/npm/@foxreis/tizentube@${encodeURIComponent(version)}/dist/userScript.js`;
+  script.src = artifact.url;
   script.dataset.supertubeChannel = channel;
-  script.dataset.supertubeUpstreamVersion = version;
+  script.dataset.supertubeUpstreamVersion = artifact.upstreamVersion;
+  script.dataset.supertubeUpstreamCommit = artifact.upstreamCommit;
+  script.dataset.supertubeArtifactCommit = artifact.artifactCommit;
+  script.dataset.supertubeSha256 = artifact.sha256;
   script.onerror = () => {
-    console.error(`[SuperTube] userscript load failed: channel=${channel} version=${version}`);
+    console.error(
+      `[SuperTube] userscript load failed: channel=${channel} artifact=${artifact.artifactCommit}`,
+    );
   };
 
   const target = document.head || document.documentElement;

@@ -74,10 +74,10 @@ def patch_translations(mods: Path) -> None:
 
         settings = data.get("settings", {})
         options = settings.get("options", {})
-        tt_settings = options.get("ttSettings", {})
+        tt_settings = settings.get("ttSettings", {})
         tt_settings["madeByText"] = "SuperTube • IŞINNET"
 
-        support = options.get("supportTT", {})
+        support = settings.get("supportTT", {})
         if path.name == "tr.json":
             support["title"] = "SuperTube Hakkında"
             support["subtitle"] = "SuperTube • IŞINNET"

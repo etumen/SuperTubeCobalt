@@ -21,6 +21,23 @@ def run(*args: str, cwd: Path | None = None) -> None:
     subprocess.run(args, cwd=cwd, check=True)
 
 
+def run_npm(mods: Path, *args: str) -> None:
+    """Use native Linux npm when available; otherwise use Windows npm from WSL."""
+    if shutil.which("node"):
+        run("npm", *args, cwd=mods)
+        return
+
+    cmd = Path("/mnt/c/Windows/System32/cmd.exe")
+    if not cmd.is_file():
+        raise RuntimeError("No Linux node and Windows cmd.exe is unavailable")
+
+    win_mods = subprocess.check_output(
+        ["wslpath", "-w", str(mods)], text=True
+    ).strip()
+    command = f'cd /d "{win_mods}" && npm {" ".join(args)}'
+    subprocess.run([str(cmd), "/d", "/s", "/c", command], check=True)
+
+
 def replace_once(text: str, old: str, new: str, label: str) -> str:
     count = text.count(old)
     if count != 1:
@@ -141,7 +158,13 @@ def main() -> None:
     upstream = lock["upstreamRepository"]
     commit = lock["upstreamCommit"]
 
-    with tempfile.TemporaryDirectory(prefix="supertube-userscript-") as temp:
+    windows_npm_mode = shutil.which("node") is None
+    temp_parent = None
+    if windows_npm_mode:
+        temp_parent = Path("/mnt/c/Temp")
+        temp_parent.mkdir(parents=True, exist_ok=True)
+
+    with tempfile.TemporaryDirectory(prefix="supertube-userscript-", dir=temp_parent) as temp:
         source = Path(temp) / "TizenTube"
         run("git", "clone", "--filter=blob:none", "--no-checkout", upstream, str(source))
         run("git", "checkout", commit, cwd=source)
@@ -151,8 +174,8 @@ def main() -> None:
         patch_settings(mods)
         patch_runtime(mods)
 
-        run("npm", "ci", cwd=mods)
-        run("npm", "run", "build", cwd=mods)
+        run_npm(mods, "ci")
+        run_npm(mods, "run", "build")
 
         built = source / "dist/userScript.js"
         if not built.is_file() or built.stat().st_size < 10_000:

@@ -171,6 +171,38 @@ class SuperTubeUserscriptBuilderTests(unittest.TestCase):
         )
         self.assertEqual(builder.SECURE_TOOLCHAIN_PINS, expected)
 
+    def test_secure_toolchain_is_installed_and_audited_before_build(self):
+        self.assertTrue(
+            hasattr(builder, "install_secure_toolchain"),
+            "builder must apply SECURE_TOOLCHAIN_PINS during the build",
+        )
+
+        calls = []
+        original_run_npm = builder.run_npm
+        builder.run_npm = lambda mods, *args: calls.append(args)
+        try:
+            builder.install_secure_toolchain(Path("/tmp/fake-mods"))
+        finally:
+            builder.run_npm = original_run_npm
+
+        expected_specs = tuple(
+            f"{name}@{version}"
+            for name, version in builder.SECURE_TOOLCHAIN_PINS.items()
+        )
+        self.assertEqual(
+            calls,
+            [
+                (
+                    "install",
+                    "--save-dev",
+                    "--save-exact",
+                    "--ignore-scripts",
+                    *expected_specs,
+                ),
+                ("audit", "--audit-level=low"),
+            ],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

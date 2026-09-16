@@ -16,6 +16,16 @@ ROOT = Path(__file__).resolve().parents[2]
 LOCK = ROOT / "supertube/userscript/upstream.lock.json"
 DIST_ROOT = ROOT / "supertube/userscript/dist"
 
+SECURE_TOOLCHAIN_PINS = {
+    "@babel/core": "7.29.7",
+    "@babel/plugin-transform-modules-systemjs": "7.29.8",
+    "browserslist": "4.29.0",
+    "picomatch": "4.0.7",
+    "rollup": "3.30.0",
+    "@rollup/plugin-terser": "1.0.0",
+    "serialize-javascript": "7.1.1",
+}
+
 REQUIRED_ARTIFACT_STRINGS = (
     "SuperTube",
     "IŞINNET",

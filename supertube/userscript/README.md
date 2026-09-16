@@ -4,15 +4,15 @@ This directory is the control boundary between the SuperTube Cobalt runtime and 
 
 ## Goal
 
-Production devices must never execute an unversioned `latest` TizenTube userscript. Upstream changes first enter the SuperTube `staging` channel, are tested on a test TV, and only then are promoted to `stable`.
+Production devices must never execute an unversioned `latest` TizenTube userscript or load the upstream npm package directly at runtime. Upstream changes first enter the SuperTube `staging` channel, are built and audited by our downstream builder, are tested on a test TV, and only then are promoted to `stable`.
 
 The upstream userscript remains a separate GPL-3.0-only component. Cobalt engine/internal technical names are not renamed just for branding. User-visible SuperTube branding is handled in the SuperTube userscript/branding layer.
 
 ## Channels
 
-`bootstrap.js` defaults to `stable` and loads an exact npm version.
+`bootstrap.js` defaults to `stable`. Each populated channel points to an immutable SuperTube artifact stored in this repository at an exact Git commit, not to `@foxreis/tizentube` on npm.
 
-For a test device, set:
+Until the first TV-tested artifact is promoted, `stable` intentionally has no artifact and fails closed. A test device can opt in to staging with:
 
 ```js
 localStorage.setItem('supertube.userscript.channel', 'staging')
@@ -28,12 +28,14 @@ If localStorage is unavailable, the loader always falls back to `stable`.
 
 ## Update procedure
 
-1. Check the new upstream TizenTube release and diff it against the currently pinned version.
-2. Update only `staging` in `bootstrap.js` and `stagingVersion` in `upstream.lock.json`.
-3. Test on the SuperTube test device: startup, playback, sign-in, YouTube account QR, SponsorBlock/ad-block features, remote keys, settings, QR utilities, and visible branding.
-4. If the test fails, leave `stable` unchanged and fix/reject the candidate.
-5. If the test passes, promote the exact tested version by changing `stable` to match `staging`.
-6. Rollback is an immediate stable-version revert to the last known-good version.
+1. Check the new upstream TizenTube release/commit and diff it against `upstream.lock.json`.
+2. Pin the selected upstream commit and build `supertube/userscript/dist/staging/userScript.js` with `tools/supertube/build_userscript_fork.py --channel staging`.
+3. Verify the generated `build.json` SHA-256 and commit the exact staging artifact without changing `stable`.
+4. Update the staging entry in `bootstrap.js` to the immutable artifact commit and recorded SHA-256.
+5. Test that exact staging artifact on the SuperTube test device: startup, playback, sign-in, YouTube account QR, SponsorBlock/ad-block features, remote keys, settings, QR utilities, and visible branding.
+6. If the test fails, leave `stable` unchanged and fix/reject the candidate.
+7. If the test passes, promote the exact tested bytes to `dist/stable`, record the same SHA-256, and point the stable bootstrap entry to that immutable commit.
+8. Rollback means repointing `stable` to the previous known-good immutable artifact; it never falls back to upstream latest.
 
 ## QR ownership
 

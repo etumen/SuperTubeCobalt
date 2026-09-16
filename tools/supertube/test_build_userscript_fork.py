@@ -14,7 +14,7 @@ spec.loader.exec_module(builder)
 
 
 class SuperTubeUserscriptBuilderTests(unittest.TestCase):
-    def test_translation_patch_updates_nested_branding_and_support_links(self):
+    def test_translation_patch_updates_real_upstream_branding_and_support_links(self):
         with tempfile.TemporaryDirectory() as temp:
             mods = Path(temp)
             resources = mods / "translations" / "resources"
@@ -22,18 +22,18 @@ class SuperTubeUserscriptBuilderTests(unittest.TestCase):
             fixture = {
                 "settings": {
                     "options": {
-                        "ttSettings": {
-                            "title": "Paramètres TizenTube",
-                            "madeByText": "Fait par Reis Can",
-                        },
-                        "supportTT": {
-                            "title": "Soutenir TizenTube",
-                            "content": {
-                                "5": "- Buy Me A Coffee : https://www.buymeacoffee.com/reisxd",
-                                "6": "- GitHub Sponsors : https://github.com/sponsors/reisxd",
-                            },
-                        },
                         "misc": {"options": {"ttWelcomeMsg": "Afficher le message TT"}},
+                    },
+                    "ttSettings": {
+                        "title": "Paramètres TizenTube",
+                        "madeByText": "Fait par Reis Can",
+                    },
+                    "supportTT": {
+                        "title": "Soutenir TizenTube",
+                        "content": {
+                            "5": "- Buy Me A Coffee : https://www.buymeacoffee.com/reisxd",
+                            "6": "- GitHub Sponsors : https://github.com/sponsors/reisxd",
+                        },
                     },
                     "player": {"withTizenTube": "avec TizenTube"},
                 }
@@ -44,16 +44,16 @@ class SuperTubeUserscriptBuilderTests(unittest.TestCase):
             builder.patch_translations(mods)
 
             patched = json.loads(path.read_text(encoding="utf-8"))
-            options = patched["settings"]["options"]
-            self.assertEqual(options["ttSettings"]["madeByText"], "SuperTube • IŞINNET")
-            support = options["supportTT"]
+            settings = patched["settings"]
+            self.assertEqual(settings["ttSettings"]["madeByText"], "SuperTube • IŞINNET")
+            support = settings["supportTT"]
             serialized = json.dumps(support, ensure_ascii=False)
             self.assertNotIn("buymeacoffee.com/reisxd", serialized)
             self.assertNotIn("github.com/sponsors/reisxd", serialized)
             self.assertIn("https://isinnet.net", serialized)
             self.assertIn("https://github.com/etumen/SuperTubeCobalt", serialized)
-            self.assertIn("withTizenTube", patched["settings"]["player"])
-            self.assertEqual(patched["settings"]["player"]["withTizenTube"], "avec SuperTube")
+            self.assertIn("withTizenTube", settings["player"])
+            self.assertEqual(settings["player"]["withTizenTube"], "avec SuperTube")
 
     def test_js_brand_patch_rebrands_literals_but_preserves_native_api_identifier(self):
         with tempfile.TemporaryDirectory() as temp:

@@ -45,6 +45,13 @@ def replace_once(text: str, old: str, new: str, label: str) -> str:
     return text.replace(old, new, 1)
 
 
+def replace_required(text: str, old: str, new: str, label: str) -> str:
+    count = text.count(old)
+    if count < 1:
+        raise RuntimeError(f"{label}: expected at least 1 match, found 0")
+    return text.replace(old, new)
+
+
 def replace_brand_strings(value):
     if isinstance(value, str):
         return (
@@ -66,10 +73,11 @@ def patch_translations(mods: Path) -> None:
         data = replace_brand_strings(data)
 
         settings = data.get("settings", {})
-        tt_settings = settings.get("ttSettings", {})
+        options = settings.get("options", {})
+        tt_settings = options.get("ttSettings", {})
         tt_settings["madeByText"] = "SuperTube • IŞINNET"
 
-        support = settings.get("supportTT", {})
+        support = options.get("supportTT", {})
         if path.name == "tr.json":
             support["title"] = "SuperTube Hakkında"
             support["subtitle"] = "SuperTube • IŞINNET"
@@ -79,9 +87,9 @@ def patch_translations(mods: Path) -> None:
                 "3": "YouTube hesabınız doğrudan YouTube içinde bağlı kalır.",
                 "4": "Web: https://isinnet.net",
                 "5": "Kaynak: https://github.com/etumen/SuperTubeCobalt",
-                "6": ""
+                "6": "",
             }
-            misc = settings.get("options", {}).get("misc", {}).get("options", {})
+            misc = options.get("misc", {}).get("options", {})
             misc["ttWelcomeMsg"] = "SuperTube Karşılama Mesajını Göster"
         else:
             support["title"] = "About SuperTube"
@@ -92,9 +100,9 @@ def patch_translations(mods: Path) -> None:
                 "3": "Your YouTube account remains connected directly inside YouTube.",
                 "4": "Web: https://isinnet.net",
                 "5": "Source: https://github.com/etumen/SuperTubeCobalt",
-                "6": ""
+                "6": "",
             }
-            misc = settings.get("options", {}).get("misc", {}).get("options", {})
+            misc = options.get("misc", {}).get("options", {})
             misc["ttWelcomeMsg"] = "Show SuperTube Welcome Message"
 
         path.write_text(json.dumps(data, ensure_ascii=False, indent=4) + "\n", encoding="utf-8")
@@ -149,6 +157,38 @@ def patch_runtime(mods: Path) -> None:
     updater.write_text(text, encoding="utf-8")
 
 
+def patch_brand_literals(mods: Path) -> None:
+    """Rebrand user-visible hard-coded JS strings without renaming native API identifiers."""
+    replacements = {
+        mods / "resolveCommand.js": [
+            ("'TizenTube'", "'SuperTube'", "toast brand"),
+        ],
+        mods / "ui/ui.js": [
+            ("TizenTube Theme Configuration", "SuperTube Theme Configuration", "theme title"),
+        ],
+        mods / "features/updater.js": [
+            (
+                "You are using the latest version of TizenTube.",
+                "You are using the latest version of SuperTube.",
+                "updater log brand",
+            ),
+        ],
+        mods / "features/moreSubtitles.js": [
+            (
+                "TizenTube Subtitle Localization",
+                "SuperTube Subtitle Localization",
+                "subtitle localization brand",
+            ),
+        ],
+    }
+
+    for path, path_replacements in replacements.items():
+        text = path.read_text(encoding="utf-8")
+        for old, new, label in path_replacements:
+            text = replace_required(text, old, new, label)
+        path.write_text(text, encoding="utf-8")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--channel", choices=("stable", "staging"), required=True)
@@ -173,6 +213,7 @@ def main() -> None:
         patch_translations(mods)
         patch_settings(mods)
         patch_runtime(mods)
+        patch_brand_literals(mods)
 
         run_npm(mods, "ci")
         run_npm(mods, "run", "build")

@@ -1,0 +1,9 @@
+{
+  "upstreamRepository": "https://github.com/reisxd/TizenTube",
+  "upstreamPackage": "@foxreis/tizentube",
+  "license": "GPL-3.0-only",
+  "stableVersion": "1.15.0",
+  "stagingVersion": "1.15.0",
+  "checkedAt": "2026-09-16",
+  "policy": "Upstream updates must enter staging first and may be promoted to stable only after SuperTube TV testing."
+}

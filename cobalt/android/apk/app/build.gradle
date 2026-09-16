@@ -44,6 +44,8 @@ ext {
 println "TARGET: ${cobaltTarget}"
 
 android {
+    // Keep Cobalt's Java/native namespace intact. SuperTube only owns the
+    // install-time application id and user-visible app name.
     namespace "dev.cobalt.coat"
     compileSdkVersion "android-${LATEST_SUPPORTED_SDK_VERSION}"
     buildToolsVersion "${LATEST_SUPPORTED_SDK_VERSION}.0.0"
@@ -74,14 +76,14 @@ android {
         }
     }
     defaultConfig {
-        applicationId "io.gh.reisxd.tizentube.cobalt"
+        applicationId "net.isinnet.supertube"
         minSdkVersion MIN_SUPPORTED_SDK_VERSION
         targetSdkVersion LATEST_SUPPORTED_SDK_VERSION
         compileSdkVersion LATEST_SUPPORTED_SDK_VERSION
         versionCode 200
         versionName "${buildId}"
         manifestPlaceholders = [
-            applicationName: "CoAT: ${cobaltTarget}",
+            applicationName: "SuperTube",
             evergreenCompatible: "${evergreenCompatible}"
         ]
         externalNativeBuild {

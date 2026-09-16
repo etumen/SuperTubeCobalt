@@ -127,7 +127,7 @@ public class DiscoveryServer {
     response.append("EXT:\r\n");
     response.append("BOOTID.UPNP.ORG: 1\r\n");
     response.append("CONFIGID.UPNP.ORG: 14650996\r\n");
-    response.append("SERVER: Cobalt/2.0 UPnP/1.1\r\n");
+    response.append("SERVER: SuperTube/2.0 UPnP/1.1\r\n");
     response.append("ST: ").append(responseSt).append("\r\n");
     response.append("USN: uuid:").append(udn).append("::").append(responseSt).append("\r\n");
     response.append("\r\n");

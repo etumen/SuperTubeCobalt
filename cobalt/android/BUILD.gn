@@ -9,7 +9,7 @@ jinja_template("cobalt_manifest") {
   input = "//cobalt/shell/android/shell_apk/AndroidManifest.xml.jinja2"
   output = cobalt_manifest
   variables = [
-    "manifest_package=io.gh.reisxd.tizentube.cobalt",
+    "manifest_package=net.isinnet.supertube",
     "build_type=$build_type",
   ]
 }
@@ -250,7 +250,7 @@ shared_library_with_jni("libchrobalt") {
 }
 
 android_apk("cobalt_apk") {
-  apk_name = "Cobalt"
+  apk_name = "SuperTube"
   android_manifest = cobalt_manifest
   android_manifest_dep = ":cobalt_manifest"
   deps = [

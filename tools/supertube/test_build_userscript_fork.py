@@ -38,7 +38,7 @@ class SuperTubeUserscriptBuilderTests(unittest.TestCase):
                     "player": {"withTizenTube": "avec TizenTube"},
                 }
             }
-            path = resources / "fr.json"
+            path = resources / "en.json"
             path.write_text(json.dumps(fixture), encoding="utf-8")
 
             builder.patch_translations(mods)
@@ -54,6 +54,46 @@ class SuperTubeUserscriptBuilderTests(unittest.TestCase):
             self.assertIn("https://github.com/etumen/SuperTubeCobalt", serialized)
             self.assertIn("withTizenTube", settings["player"])
             self.assertEqual(settings["player"]["withTizenTube"], "avec SuperTube")
+
+    def test_translation_patch_updates_french_nested_locale_variant(self):
+        with tempfile.TemporaryDirectory() as temp:
+            mods = Path(temp)
+            resources = mods / "translations" / "resources"
+            resources.mkdir(parents=True)
+            fixture = {
+                "settings": {
+                    "options": {
+                        "misc": {"options": {"ttWelcomeMsg": "Afficher le message TT"}},
+                        "ttSettings": {
+                            "title": "Paramètres TizenTube",
+                            "madeByText": "Fait par Reis Can (reisxd) avec ❤️",
+                            "summary": "Ouvrir les paramètres TizenTube",
+                        },
+                        "supportTT": {
+                            "title": "Soutenir TizenTube",
+                            "subtitle": "❤️ Montrez votre soutien à TizenTube et à son développement",
+                            "content": {
+                                "5": "- Buy Me A Coffee : https://www.buymeacoffee.com/reisxd (de préférence)",
+                                "6": "- GitHub Sponsors : https://github.com/sponsors/reisxd",
+                            },
+                        },
+                    }
+                }
+            }
+            path = resources / "fr.json"
+            path.write_text(json.dumps(fixture), encoding="utf-8")
+
+            builder.patch_translations(mods)
+
+            patched = json.loads(path.read_text(encoding="utf-8"))
+            options = patched["settings"]["options"]
+            self.assertEqual(options["ttSettings"]["madeByText"], "SuperTube • IŞINNET")
+            support = options["supportTT"]
+            serialized = json.dumps(support, ensure_ascii=False)
+            self.assertNotIn("buymeacoffee.com/reisxd", serialized)
+            self.assertNotIn("github.com/sponsors/reisxd", serialized)
+            self.assertIn("https://isinnet.net", serialized)
+            self.assertIn("https://github.com/etumen/SuperTubeCobalt", serialized)
 
     def test_js_brand_patch_rebrands_literals_but_preserves_native_api_identifier(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -90,6 +130,19 @@ class SuperTubeUserscriptBuilderTests(unittest.TestCase):
             self.assertNotIn("TizenTube Subtitle Localization", combined)
             self.assertIn("SuperTube", combined)
             self.assertIn("window.h5vcc.tizentube", combined)
+
+    def test_artifact_validation_rejects_legacy_links(self):
+        with tempfile.TemporaryDirectory() as temp:
+            artifact = Path(temp) / "userScript.js"
+            artifact.write_text(
+                "SuperTube IŞINNET https://isinnet.net "
+                "https://github.com/etumen/SuperTubeCobalt "
+                "https://www.buymeacoffee.com/reisxd",
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(RuntimeError, "forbidden legacy strings"):
+                builder.validate_built_userscript(artifact)
 
 
 if __name__ == "__main__":

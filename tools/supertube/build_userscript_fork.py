@@ -16,6 +16,23 @@ ROOT = Path(__file__).resolve().parents[2]
 LOCK = ROOT / "supertube/userscript/upstream.lock.json"
 DIST_ROOT = ROOT / "supertube/userscript/dist"
 
+REQUIRED_ARTIFACT_STRINGS = (
+    "SuperTube",
+    "IŞINNET",
+    "isinnet.net",
+    "github.com/etumen/SuperTubeCobalt",
+)
+
+FORBIDDEN_ARTIFACT_STRINGS = (
+    "buymeacoffee.com/reisxd",
+    "github.com/sponsors/reisxd",
+    "reisxd/TizenTubeCobalt",
+    "reisxd/TizenTube",
+    "TizenTube Theme Configuration",
+    "You are using the latest version of TizenTube",
+    "TizenTube Subtitle Localization",
+)
+
 
 def run(*args: str, cwd: Path | None = None) -> None:
     subprocess.run(args, cwd=cwd, check=True)
@@ -66,6 +83,22 @@ def replace_brand_strings(value):
     return value
 
 
+def _translation_blocks(settings: dict, options: dict, key: str) -> list[dict]:
+    """Return known upstream locations for a translation block.
+
+    Most locales store ttSettings/supportTT directly under settings, while the
+    French locale in the pinned upstream commit stores them under
+    settings.options. Patch both shapes so one malformed/different locale cannot
+    leak upstream branding or donation links into the bundled userscript.
+    """
+    blocks: list[dict] = []
+    for parent in (settings, options):
+        block = parent.get(key)
+        if isinstance(block, dict):
+            blocks.append(block)
+    return blocks
+
+
 def patch_translations(mods: Path) -> None:
     resources = mods / "translations/resources"
     for path in resources.glob("*.json"):
@@ -74,35 +107,39 @@ def patch_translations(mods: Path) -> None:
 
         settings = data.get("settings", {})
         options = settings.get("options", {})
-        tt_settings = settings.get("ttSettings", {})
-        tt_settings["madeByText"] = "SuperTube • IŞINNET"
 
-        support = settings.get("supportTT", {})
+        for tt_settings in _translation_blocks(settings, options, "ttSettings"):
+            tt_settings["madeByText"] = "SuperTube • IŞINNET"
+
+        support_blocks = _translation_blocks(settings, options, "supportTT")
+        for support in support_blocks:
+            if path.name == "tr.json":
+                support["title"] = "SuperTube Hakkında"
+                support["subtitle"] = "SuperTube • IŞINNET"
+                support["content"] = {
+                    "1": "SuperTube, IŞINNET'in Cobalt tabanlı TV deneyimidir.",
+                    "2": "Yeni özellikler ve güncellemeler kullanıcıya sunulmadan önce test edilir.",
+                    "3": "YouTube hesabınız doğrudan YouTube içinde bağlı kalır.",
+                    "4": "Web: https://isinnet.net",
+                    "5": "Kaynak: https://github.com/etumen/SuperTubeCobalt",
+                    "6": "",
+                }
+            else:
+                support["title"] = "About SuperTube"
+                support["subtitle"] = "SuperTube • IŞINNET"
+                support["content"] = {
+                    "1": "SuperTube is the IŞINNET Cobalt-based TV experience.",
+                    "2": "New features and updates are tested before they are released to users.",
+                    "3": "Your YouTube account remains connected directly inside YouTube.",
+                    "4": "Web: https://isinnet.net",
+                    "5": "Source: https://github.com/etumen/SuperTubeCobalt",
+                    "6": "",
+                }
+
+        misc = options.get("misc", {}).get("options", {})
         if path.name == "tr.json":
-            support["title"] = "SuperTube Hakkında"
-            support["subtitle"] = "SuperTube • IŞINNET"
-            support["content"] = {
-                "1": "SuperTube, IŞINNET'in Cobalt tabanlı TV deneyimidir.",
-                "2": "Yeni özellikler ve güncellemeler kullanıcıya sunulmadan önce test edilir.",
-                "3": "YouTube hesabınız doğrudan YouTube içinde bağlı kalır.",
-                "4": "Web: https://isinnet.net",
-                "5": "Kaynak: https://github.com/etumen/SuperTubeCobalt",
-                "6": "",
-            }
-            misc = options.get("misc", {}).get("options", {})
             misc["ttWelcomeMsg"] = "SuperTube Karşılama Mesajını Göster"
         else:
-            support["title"] = "About SuperTube"
-            support["subtitle"] = "SuperTube • IŞINNET"
-            support["content"] = {
-                "1": "SuperTube is the IŞINNET Cobalt-based TV experience.",
-                "2": "New features and updates are tested before they are released to users.",
-                "3": "Your YouTube account remains connected directly inside YouTube.",
-                "4": "Web: https://isinnet.net",
-                "5": "Source: https://github.com/etumen/SuperTubeCobalt",
-                "6": "",
-            }
-            misc = options.get("misc", {}).get("options", {})
             misc["ttWelcomeMsg"] = "Show SuperTube Welcome Message"
 
         path.write_text(json.dumps(data, ensure_ascii=False, indent=4) + "\n", encoding="utf-8")
@@ -189,6 +226,23 @@ def patch_brand_literals(mods: Path) -> None:
         path.write_text(text, encoding="utf-8")
 
 
+def validate_built_userscript(path: Path) -> None:
+    """Fail closed if the built artifact is missing our identity or leaks legacy links."""
+    text = path.read_text(encoding="utf-8", errors="ignore")
+
+    missing = [value for value in REQUIRED_ARTIFACT_STRINGS if value not in text]
+    if missing:
+        raise RuntimeError(
+            "missing required SuperTube strings: " + ", ".join(missing)
+        )
+
+    forbidden = [value for value in FORBIDDEN_ARTIFACT_STRINGS if value in text]
+    if forbidden:
+        raise RuntimeError(
+            "forbidden legacy strings: " + ", ".join(forbidden)
+        )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--channel", choices=("stable", "staging"), required=True)
@@ -221,6 +275,8 @@ def main() -> None:
         built = source / "dist/userScript.js"
         if not built.is_file() or built.stat().st_size < 10_000:
             raise RuntimeError("userscript build output missing or unexpectedly small")
+
+        validate_built_userscript(built)
 
         output_dir = DIST_ROOT / args.channel
         output_dir.mkdir(parents=True, exist_ok=True)

@@ -26,9 +26,9 @@
     staging: Object.freeze({
       upstreamVersion: '1.15.0',
       upstreamCommit: '893b663d35efa558d8bdf9f54f0c4f9a31ab6a07',
-      artifactCommit: '67ae85f6a9aeab39ecbff6b0d3dde4b643bcd53d',
-      sha256: '38bd2208cf4c087ed2a3104742be94bbc93523f68dd4646d7cbde222dbcbeef6',
-      url: 'https://cdn.jsdelivr.net/gh/etumen/SuperTubeCobalt@67ae85f6a9aeab39ecbff6b0d3dde4b643bcd53d/supertube/userscript/dist/staging/userScript.js',
+      artifactCommit: '12bcc3ebc7dda3178129a206e786c43ea41bd4de',
+      sha256: 'f4e010cdb260880b8b32d7b7d70b5dcce3d0cf4d6cf6e3b6128541f3a1641e08',
+      url: 'https://cdn.jsdelivr.net/gh/etumen/SuperTubeCobalt@12bcc3ebc7dda3178129a206e786c43ea41bd4de/supertube/userscript/dist/staging/userScript.js',
     }),
   });
 

@@ -41,6 +41,10 @@ FORBIDDEN_ARTIFACT_STRINGS = (
     "TizenTube Theme Configuration",
     "You are using the latest version of TizenTube",
     "TizenTube Subtitle Localization",
+    "ТизенТубе",
+    "InstallAppFromURL",
+    "UPDATE_DOWNLOAD",
+    "CHECK_FOR_UPDATES",
 )
 
 
@@ -100,6 +104,8 @@ def replace_brand_strings(value):
         return (
             value.replace("TizenTube Cobalt", "SuperTube")
             .replace("TizenTube", "SuperTube")
+            .replace("ТизенТубе Цобалт", "SuperTube")
+            .replace("ТизенТубе", "SuperTube")
             .replace("TT Welcome Message", "SuperTube Welcome Message")
         )
     if isinstance(value, list):
@@ -218,6 +224,47 @@ def patch_runtime(mods: Path) -> None:
         "APK updater endpoint",
     )
     updater.write_text(text, encoding="utf-8")
+
+    resolve = mods / "resolveCommand.js"
+    text = resolve.read_text(encoding="utf-8")
+    text = replace_once(
+        text,
+        "import checkForUpdates from './features/updater.js';",
+        "// Native self-update is disabled; SuperTube updates are controlled by the release channel.",
+        "native updater import",
+    )
+
+    update_download = re.compile(
+        r"(?m)^[ \t]*case 'UPDATE_DOWNLOAD':\n"
+        r"^[ \t]*window\.h5vcc\.tizentube\.InstallAppFromURL\(parameters\);\n"
+        r"^[ \t]*showToast\(t\('settings\.options\.updater\.downloading\.title'\), "
+        r"t\('settings\.options\.updater\.downloading\.subtitle'\)\);\n"
+        r"^[ \t]*break;\n"
+    )
+    text, count = update_download.subn("", text, count=1)
+    if count != 1:
+        raise RuntimeError(f"UPDATE_DOWNLOAD removal: expected 1 match, found {count}")
+
+    check_updates = re.compile(
+        r"(?m)^[ \t]*case 'CHECK_FOR_UPDATES':\n"
+        r"^[ \t]*checkForUpdates\(true\);\n"
+        r"^[ \t]*break;\n"
+    )
+    text, count = check_updates.subn("", text, count=1)
+    if count != 1:
+        raise RuntimeError(f"CHECK_FOR_UPDATES removal: expected 1 match, found {count}")
+
+    resolve.write_text(text, encoding="utf-8")
+
+    entry = mods / "userScript.js"
+    text = entry.read_text(encoding="utf-8")
+    text = replace_once(
+        text,
+        'import "./features/updater.js";',
+        "// Native self-update module intentionally not loaded.",
+        "native updater entry import",
+    )
+    entry.write_text(text, encoding="utf-8")
 
 
 def patch_brand_literals(mods: Path) -> None:

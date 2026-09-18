@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-BOOTSTRAP_COMMIT = "30a3b025558c298b832946ddd0805e38faee1a7a"
+BOOTSTRAP_COMMIT = "65903d03854e94e474c34e7d9c78a60e658eff02"
 
 class SuperTubeLoaderPinTests(unittest.TestCase):
     def test_native_loader_is_pinned_to_bootstrap_commit(self):

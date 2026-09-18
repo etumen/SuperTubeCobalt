@@ -6,7 +6,7 @@ from pathlib import Path
 TARGET = Path("third_party/blink/renderer/core/dom/document.cc")
 OLD = 'std::string("https://cdn.jsdelivr.net/npm/@foxreis/tizentube/dist/userScript.js?v=")'
 NEW = (
-    'std::string("https://cdn.jsdelivr.net/gh/etumen/SuperTubeCobalt@30a3b025558c298b832946ddd0805e38faee1a7a/'
+    'std::string("https://cdn.jsdelivr.net/gh/etumen/SuperTubeCobalt@65903d03854e94e474c34e7d9c78a60e658eff02/'
     'supertube/userscript/bootstrap.js?v=")'
 )
 

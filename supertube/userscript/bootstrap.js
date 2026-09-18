@@ -19,10 +19,16 @@
   // 2) test that exact artifact on a SuperTube test TV,
   // 3) only after approval, promote the exact tested bytes to stable.
   //
-  // Stable intentionally remains empty until the first TV-tested artifact is
-  // promoted. Failing closed is safer than silently falling back to upstream.
+  // Stable points only to the exact artifact tested successfully on the
+  // SuperTube Android TV test device before promotion.
   const ARTIFACTS = Object.freeze({
-    stable: null,
+    stable: Object.freeze({
+      upstreamVersion: '1.15.0',
+      upstreamCommit: '893b663d35efa558d8bdf9f54f0c4f9a31ab6a07',
+      artifactCommit: '1200a9643f141e28d6db3db5de9eb8304fa262f3',
+      sha256: 'f4e010cdb260880b8b32d7b7d70b5dcce3d0cf4d6cf6e3b6128541f3a1641e08',
+      url: 'https://cdn.jsdelivr.net/gh/etumen/SuperTubeCobalt@1200a9643f141e28d6db3db5de9eb8304fa262f3/supertube/userscript/dist/stable/userScript.js',
+    }),
     staging: Object.freeze({
       upstreamVersion: '1.15.0',
       upstreamCommit: '893b663d35efa558d8bdf9f54f0c4f9a31ab6a07',

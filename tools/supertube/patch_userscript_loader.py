@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Route Cobalt's injected userscript through the SuperTube-controlled bootstrap."""
+"""Route Cobalt's injected userscript to the immutable SuperTube stable artifact."""
 
 from pathlib import Path
 
 TARGET = Path("third_party/blink/renderer/core/dom/document.cc")
 OLD = 'std::string("https://cdn.jsdelivr.net/npm/@foxreis/tizentube/dist/userScript.js?v=")'
 NEW = (
-    'std::string("https://cdn.jsdelivr.net/gh/etumen/SuperTubeCobalt@65903d03854e94e474c34e7d9c78a60e658eff02/'
-    'supertube/userscript/bootstrap.js?v=")'
+    'std::string("https://cdn.jsdelivr.net/gh/etumen/SuperTubeCobalt@1200a9643f141e28d6db3db5de9eb8304fa262f3/'
+    'supertube/userscript/dist/stable/userScript.js?v=")'
 )
 
 
@@ -28,7 +28,7 @@ def main() -> None:
         )
 
     TARGET.write_text(text.replace(OLD, NEW, 1), encoding="utf-8")
-    print("Patched Cobalt userscript loader to SuperTube bootstrap.")
+    print("Patched Cobalt userscript loader to immutable SuperTube stable artifact.")
 
 
 if __name__ == "__main__":

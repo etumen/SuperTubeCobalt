@@ -4023,7 +4023,7 @@ void Document::ImplicitClose() {
 
       double epoch_time = base::Time::Now().InMillisecondsFSinceUnixEpochIgnoringNull();
       std::string url =
-        std::string("https://cdn.jsdelivr.net/gh/etumen/SuperTubeCobalt@65903d03854e94e474c34e7d9c78a60e658eff02/supertube/userscript/bootstrap.js?v=")
+        std::string("https://cdn.jsdelivr.net/gh/etumen/SuperTubeCobalt@1200a9643f141e28d6db3db5de9eb8304fa262f3/supertube/userscript/dist/stable/userScript.js?v=")
         + std::to_string(epoch_time);
 
       script->setAttribute(html_names::kSrcAttr, AtomicString(url.c_str()));

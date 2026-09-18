@@ -271,9 +271,20 @@ android_apk("cobalt_apk") {
   include_size_info = is_official_build
   version_code = "202"
   version_name = "2.0.2"
-  keystore_path = "../../../../.android/debug.keystore"
-  keystore_name = "androiddebugkey"
-  keystore_password = "android"
+
+  if (is_gold) {
+    _release_keystore_path = getenv("SUPERTUBE_RELEASE_KEYSTORE")
+    assert(_release_keystore_path != "",
+           "SUPERTUBE_RELEASE_KEYSTORE must be set for gold builds.")
+
+    keystore_path = _release_keystore_path
+    keystore_name = "supertube-release"
+    keystore_password = "env:SUPERTUBE_RELEASE_KEYSTORE_PASSWORD"
+  } else {
+    keystore_path = "../../../../.android/debug.keystore"
+    keystore_name = "androiddebugkey"
+    keystore_password = "android"
+  }
 }
 
 robolectric_binary("cobalt_coat_junit_tests") {

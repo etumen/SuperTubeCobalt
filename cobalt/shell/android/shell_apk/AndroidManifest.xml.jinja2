@@ -58,7 +58,7 @@
             android:banner="@drawable/app_banner"
             android:zygotePreloadName="org.chromium.content_public.app.ZygotePreload"
             {# Always enable debuggable=true for development. This manifest is only used for the development shell (CoAT) and does not affect the production Kimono app. #}
-            android:debuggable="true"
+            android:debuggable="{{ cobalt_debuggable | default('true') }}"
             android:label="{% block application_label %}SuperTube{% endblock %}">
         {# Always enable profileable for development. This manifest is only used for the development shell (CoAT) and does not affect the production Kimono app. #}
         <profileable android:shell="true" android:enabled="true" />
@@ -70,7 +70,8 @@
                   android:windowSoftInputMode="adjustResize"
                   android:supportsPictureInPicture="true"
                   android:hardwareAccelerated="true"
-                  android:exported="true">
+                  android:stateNotNeeded="true"
+                  android:exported="false">
             <meta-data android:name="cobalt.APP_URL" android:value="https://www.youtube.com/tv?additionalDataUrl=http://localhost:8012/apps/YouTube"/>
             <meta-data android:name="cobalt.ENABLE_SPLASH_SCREEN" android:value="true"/>
             <meta-data android:name="com.google.android.tv.pip.category" android:value="communication" />
@@ -79,6 +80,11 @@
             {# Always enable Perfetto tracing for development. This manifest is only used for the development shell (CoAT) and does not affect the production Kimono app. #}
             <meta-data android:name="cobalt.ENABLE_FEATURES" android:value="EnablePerfettoSystemTracing"/>
             <meta-data android:name="android.app.lib_name" android:value="cobalt"/>
+        </activity>
+        <activity android:name="dev.cobalt.app.SuperTubeMembershipActivity"
+                  android:launchMode="singleTop"
+                  android:theme="@android:style/Theme.Material.NoActionBar"
+                  android:exported="true">
             <intent-filter>
               <action android:name="android.intent.action.MAIN"/>
               <category android:name="android.intent.category.LAUNCHER"/>
@@ -159,3 +165,4 @@
     {% block extra_root_definitions %}
     {% endblock %}
 </manifest>
+

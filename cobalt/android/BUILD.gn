@@ -10,6 +10,7 @@ jinja_template("cobalt_manifest") {
   output = cobalt_manifest
   variables = [
     "manifest_package=net.isinnet.supertube",
+    "cobalt_debuggable=$is_debug",
     "build_type=$build_type",
   ]
 }
@@ -192,7 +193,9 @@ android_library("cobalt_apk_java") {
 
   sources = [
     "apk/app/src/app/java/dev/cobalt/app/CobaltApplication.java",
+    "apk/app/src/app/java/dev/cobalt/app/HubMembership.java",
     "apk/app/src/app/java/dev/cobalt/app/MainActivity.java",
+    "apk/app/src/app/java/dev/cobalt/app/SuperTubeMembershipActivity.java",
   ]
 }
 
@@ -269,11 +272,22 @@ android_apk("cobalt_apk") {
   shared_libraries = [ ":libchrobalt" ]
   srcjar_deps = [ ":libchrobalt__jni_registration" ]
   include_size_info = is_official_build
-  version_code = "202"
-  version_name = "2.0.2"
-  keystore_path = "../../../../.android/debug.keystore"
-  keystore_name = "androiddebugkey"
-  keystore_password = "android"
+  version_code = "203"
+  version_name = "2.0.3"
+
+  if (is_gold) {
+    _release_keystore_path = getenv("SUPERTUBE_RELEASE_KEYSTORE")
+    assert(_release_keystore_path != "",
+           "SUPERTUBE_RELEASE_KEYSTORE must be set for gold builds.")
+
+    keystore_path = _release_keystore_path
+    keystore_name = "supertube-release"
+    keystore_password = "env:SUPERTUBE_RELEASE_KEYSTORE_PASSWORD"
+  } else {
+    keystore_path = "../../../../.android/debug.keystore"
+    keystore_name = "androiddebugkey"
+    keystore_password = "android"
+  }
 }
 
 robolectric_binary("cobalt_coat_junit_tests") {
@@ -305,3 +319,4 @@ robolectric_binary("cobalt_coat_junit_tests") {
     "//url:gurl_java",
   ]
 }
+

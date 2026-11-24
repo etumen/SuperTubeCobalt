@@ -13,6 +13,12 @@ import tempfile
 from util import build_utils
 
 
+def _PasswordSpec(password):
+  if password == 'stdin' or password.startswith(('pass:', 'env:', 'file:')):
+    return password
+  return 'pass:' + password
+
+
 def FinalizeApk(apksigner_path,
                 zipalign_path,
                 unsigned_apk_path,
@@ -51,7 +57,7 @@ def FinalizeApk(apksigner_path,
         '--ks-key-alias',
         key_name,
         '--ks-pass',
-        'pass:' + key_passwd,
+        _PasswordSpec(key_passwd),
     ]
     # V3 signing adds security niceties, which are irrelevant for local builds.
     sign_cmd += ['--v3-signing-enabled', 'false']

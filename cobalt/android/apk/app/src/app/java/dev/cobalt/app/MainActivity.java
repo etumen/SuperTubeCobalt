@@ -16,13 +16,19 @@ package dev.cobalt.app;
 
 import android.app.Activity;
 import android.app.Service;
+import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.view.View;
 import dev.cobalt.coat.ArtworkDownloaderDefault;
 import dev.cobalt.coat.CobaltActivity;
 import dev.cobalt.coat.CobaltService;
 import dev.cobalt.coat.StarboardBridge;
 import dev.cobalt.libraries.services.clientloginfo.ClientLogInfoModule;
 import dev.cobalt.util.Holder;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Main Activity for the "Cobalt on Android TV" app.
@@ -52,8 +58,75 @@ public class MainActivity extends CobaltActivity {
     return bridge;
   }
 
+  private final Handler membershipHandler = new Handler(Looper.getMainLooper());
+  private final ExecutorService membershipExecutor = Executors.newSingleThreadExecutor();
+  private final Runnable refresh = this::refreshMembership;
+  private final Runnable expiry = this::returnToMembership;
+  private boolean verifying;
+  private boolean firstResume = true;
+
   @Override
-  public void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
+  protected void createContent(Bundle savedInstanceState) {
+    if (HubMembership.remainingLeaseMillis() == 0) {
+      returnToMembership();
+      return;
+    }
+    super.createContent(savedInstanceState);
+    scheduleMembershipChecks();
+  }
+
+  @Override
+  protected void onResume() {
+    if (HubMembership.remainingLeaseMillis() == 0) returnToMembership();
+    super.onResume();
+    if (firstResume) {
+      firstResume = false;
+    } else {
+      refreshMembership();
+    }
+  }
+
+  private void refreshMembership() {
+    if (isFinishing() || isDestroyed() || verifying) return;
+    if (HubMembership.remainingLeaseMillis() == 0) {
+      returnToMembership();
+      return;
+    }
+    verifying = true;
+    membershipExecutor.execute(() -> {
+      HubMembership.Result result = new HubMembership(this).verify();
+      membershipHandler.post(() -> {
+        verifying = false;
+        if (isFinishing() || isDestroyed()) return;
+        if (result.status != HubMembership.Status.ACTIVE) {
+          returnToMembership();
+          return;
+        }
+        HubMembership.useLease(result);
+        scheduleMembershipChecks();
+      });
+    });
+  }
+
+  private void scheduleMembershipChecks() {
+    membershipHandler.removeCallbacks(expiry);
+    membershipHandler.removeCallbacks(refresh);
+    membershipHandler.postDelayed(expiry, HubMembership.remainingLeaseMillis());
+    membershipHandler.postDelayed(refresh, HubMembership.remainingUntilRecheckMillis());
+  }
+
+  private void returnToMembership() {
+    if (isFinishing() || isDestroyed()) return;
+    HubMembership.clearLease();
+    getWindow().getDecorView().setVisibility(View.INVISIBLE);
+    startActivity(new Intent(this, SuperTubeMembershipActivity.class));
+    finish();
+  }
+
+  @Override
+  protected void onDestroy() {
+    membershipHandler.removeCallbacksAndMessages(null);
+    membershipExecutor.shutdownNow();
+    super.onDestroy();
   }
 }
